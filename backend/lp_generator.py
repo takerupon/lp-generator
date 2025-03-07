@@ -328,7 +328,6 @@ def apply_image(html_data, css_data):
     print("【Geminiでコードを修正中です．．．】")
 
     model = genai.GenerativeModel(
-        # model_name = "gemini-2.0-pro-exp-02-05",
         model_name = "gemini-2.0-flash",
         generation_config = generation_config,
         system_instruction = (
@@ -336,8 +335,9 @@ def apply_image(html_data, css_data):
             "あなたには、htmlコードとcssコードが与えられます。"
 
             "**出力**:"
-            """*   "placeholder_css_1.jpg"という画像が、ヒーローセクションに背景として入ると想定し、htmlコードとcssコードを修正してください。"""
+            """*   画像は'background-image: url(${imageBase64})'の形式で挿入されることを想定し、htmlコードとcssコードを修正してください。"""
             "*   出力は、入力のコードを修正したhtmコード全文、cssコード全文としてください。"
+            "*   CSSでは、background-imageのURLを'${imageBase64}'というプレースホルダーで指定してください。これは後でJavaScriptによって実際の画像データに置き換えられます。"
 
             "**注意点**:"
             "*   変更はヒーローセクションに限定してください。他のセクションには手を加えないでください。"
@@ -355,11 +355,8 @@ def apply_image(html_data, css_data):
     response = model.generate_content(prompt)
 
     ## responseをhtmlコードとcssコードに分割
-    print(response.text)
     html_code = extract_code_blocks_by_type(response.text)[0]
     css_code = extract_code_blocks_by_type(response.text)[1]
-    print(html_code)
-    print(css_code)
 
     ## ファイル保存
     save_to_file(html_code, "index.html")

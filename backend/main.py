@@ -3,6 +3,7 @@ import asyncio
 import uuid
 import json
 import time
+import base64
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from fastapi import FastAPI, HTTPException, BackgroundTasks
@@ -202,13 +203,21 @@ async def generate_lp_background(job_id: str, data: LPGenerationRequest):
         with open("script.js", "r", encoding="utf-8") as f:
             final_js = f.read()
             
+        # 画像をBase64エンコード
+        image_base64 = ""
+        try:
+            with open("placeholder_css_1.jpg", "rb") as image_file:
+                image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+        except Exception as e:
+            print(f"画像エンコード中にエラー: {e}")
+            
         # 結果を作成
         result = {
             "jobId": job_id,
             "html": final_html,
             "css": final_css,
             "js": final_js,
-            "imageUrls": ["placeholder_css_1.jpg"],  # 実際の画像ファイル名を設定
+            "imageBase64": f"data:image/jpeg;base64,{image_base64}" if image_base64 else "",
             "createdAt": datetime.now().isoformat(),
         }
         

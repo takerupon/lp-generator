@@ -53,6 +53,7 @@ interface JobInfo {
     css: string;
     js: string;
     imageUrls: string[];
+    imageBase64: string;
   };
 }
 
@@ -82,16 +83,25 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 // プレビューのiframeを更新するための関数
-const updateIframeContent = (iframe: HTMLIFrameElement, html: string, css: string, js: string) => {
+const updateIframeContent = (
+  iframe: HTMLIFrameElement,
+  html: string,
+  css: string,
+  js: string,
+  imageBase64: string
+) => {
   const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
 
   if (iframeDoc) {
+    // CSSの中の${imageBase64}プレースホルダーを実際の画像データで置き換え
+    const updatedCss = css.replace("${imageBase64}", imageBase64);
+
     iframeDoc.open();
     iframeDoc.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <style>${css}</style>
+          <style>${updatedCss}</style>
         </head>
         <body>
           ${html}
@@ -204,7 +214,8 @@ const App = () => {
                 iframeRef.current,
                 jobStatus.result.html,
                 jobStatus.result.css,
-                jobStatus.result.js
+                jobStatus.result.js,
+                jobStatus.result.imageBase64
               );
             }
           }
@@ -247,7 +258,8 @@ const App = () => {
         iframeRef.current,
         jobInfo.result.html,
         jobInfo.result.css,
-        jobInfo.result.js
+        jobInfo.result.js,
+        jobInfo.result.imageBase64
       );
     }
   }, [jobInfo?.result, jobInfo?.status]);
