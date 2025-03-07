@@ -294,7 +294,7 @@ const App = () => {
 
       {/* メインコンテンツ */}
       <main className="flex-1 py-6">
-        <div className="container mx-auto px-4">
+        <div className="container mx-[100px]">
           <div className="grid lg:grid-cols-2 gap-6">
             {/* 左側: フォームと進捗状況 */}
             <div className="w-full space-y-6">
@@ -516,7 +516,7 @@ const App = () => {
             </div>
 
             {/* 右側: サイトプレビュー */}
-            <div className="w-full sticky top-20">
+            <div className="w-[900px] sticky top-20">
               <Card className="h-full">
                 <CardHeader className="pb-3">
                   <CardTitle>LP プレビュー</CardTitle>
