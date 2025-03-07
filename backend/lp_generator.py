@@ -17,8 +17,8 @@ load_dotenv()
 ######################################
 
 ## geminiを使う場合
-import google.generativeai as genai_img
-from google.generativeai import types
+from google import genai as genai_img
+from google.genai import types
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 generation_config = {
     "temperature": 1,
@@ -273,12 +273,11 @@ def design_js_agent(html_data, css_data):
     return data
 
 ## 画像を作成するエージェント
-def image_generate_agent(prompt):
+def image_generate_agent(html_data):
     print("\n===画像を作成するエージェント===")
     
     ## まずは必要な画像の情報を取得する
     model = genai.GenerativeModel(
-        # model_name = "gemini-2.0-pro-exp-02-05",
         model_name = "gemini-2.0-flash",
         generation_config = generation_config,
         system_instruction = (
@@ -291,29 +290,37 @@ def image_generate_agent(prompt):
         )
     )
     
-    response = model.generate_content(str(prompt))
+    response = model.generate_content(str(html_data))
     image_information_json = safe_json_loads(response.text)
     print(image_information_json)
 
     ## プレースホルダーのファイル名とプロンプトをそれぞれリストにまとめる
     file_name_data = list(image_information_json.keys())
     prompt_data = list(image_information_json.values())
-    print(file_name_data)
-    print(prompt_data)
+    print(f"生成する画像ファイル: {file_name_data}")
+    print(f"使用するプロンプト: {prompt_data}")
 
+    generated_files = []
     ## リストの順番で画像生成
-    if not ray.is_initialized():
-        ray.init()
     try:
+        if not ray.is_initialized():
+            ray.init()
+        
         image_tasks = [
             generate_image_by_imagen3.remote(image_prompt, file_name)
             for image_prompt, file_name in zip(prompt_data, file_name_data)
         ]
-        generated_files = ray.get(image_tasks)
-        # print(f"生成された画像ファイル: {generated_files}")
-        time.sleep(0.5)
+        
+        try:
+            generated_files = ray.get(image_tasks)
+            print(f"生成された画像ファイル: {generated_files}")
+            time.sleep(0.5)
+        except Exception as e:
+            print(f"画像生成中にエラーが発生しました: {e}")
     except Exception as e:
-        print(f"画像生成中にエラーが発生しました: {e}")
+        print(f"画像生成タスクの作成中にエラーが発生しました: {e}")
+    
+    return generated_files
 
 ## 画像を適用するエージェント
 def apply_image(html_data, css_data):
@@ -376,7 +383,8 @@ def main(section_idea):
     design_js_agent(html_data, css_data)
 
     ## 画像生成エージェントに接続
-    image_generate_agent(html_data)
+    generated_images = image_generate_agent(html_data)
+    print(f"生成された画像: {generated_images}")
 
     ## 画像適用エージェントに接続
     apply_image(html_data, css_data)
